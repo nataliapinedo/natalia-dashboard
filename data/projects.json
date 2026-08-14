@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-08-14T00:00:00Z",
+  "owner": "Natalia",
+  "projects": [
+    {
+      "id": "BRAVO-001",
+      "name": "BRAVO",
+      "status": "PRE-PILOTO",
+      "score": 6.8,
+      "investment": "Bs 27,070",
+      "sales12": "Bs 120,000",
+      "profit12": "Bs 35,000",
+      "sector": "Apparel / Sportswear",
+      "tags": ["skort","polo","short","athleisure"],
+      "created_at": "2026-08-14"
+    },
+    {
+      "id": "CARBON-5000",
+      "name": "Credito Carbono - 5000 ha",
+      "status": "IDEA",
+      "score": null,
+      "investment": null,
+      "sales12": null,
+      "profit12": null,
+      "sector": "Agro / Carbon credits",
+      "tags": ["carbon","land","forestry"],
+      "created_at": "2026-08-14"
+    }
+  ]
+}
