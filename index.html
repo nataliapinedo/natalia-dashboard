@@ -3,128 +3,55 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Natalia — Project Dashboard (Gráfico)</title>
+  <title>Natalia — Project Dashboard (Interactivo)</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">NATALIA<br/><span>Project Engine</span></div>
-      <nav>
-        <a class="active">Resumen</a>
-        <a>Oportunidad</a>
-        <a>Mercado</a>
-        <a>Finanzas</a>
-        <a>Proveedores</a>
-        <a>Roadmap</a>
-        <a>Decisión</a>
-      </nav>
-      <div class="project-actions">
-        <button id="newProjectBtn">Nuevo proyecto</button>
-        <button id="exportBtn">Exportar JSON</button>
-      </div>
+  <header class="topbar">
+    <div class="left">
+      <h1>NATALIA — Project Dashboard</h1>
+    </div>
+    <div class="actions">
+      <button id="newProjectBtn" class="btn primary">Nuevo proyecto</button>
+      <button id="exportJsonBtn" class="btn">Exportar JSON</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="controls">
+      <input id="searchInput" placeholder="Buscar proyecto..." />
+      <select id="filterMarket"><option value="">Todos los mercados</option><option>Bolivia</option><option>Perú</option><option>Paraguay</option></select>
+    </section>
+
+    <section id="projectsList" class="projects">
+      <!-- Project cards rendered here -->
+    </section>
+
+    <aside class="rightpanel">
+      <h3>Instrucciones rápidas</h3>
+      <ol>
+        <li>Usa "Nuevo proyecto" para crear una ficha rápida.</li>
+        <li>Cuando termines, haz "Exportar JSON" para descargar la matriz de proyectos.</li>
+        <li>Para publicar online usa Netlify (drag & drop) o conecta a GitHub para deploy automático.</li>
+      </ol>
     </aside>
+  </main>
 
-    <main class="main">
-      <header class="topbar">
-        <div class="search"><input id="projSearch" placeholder="Buscar proyecto..." /></div>
-        <div class="right">
-          <select id="currencySel"><option>BOB</option><option>USD</option></select>
-          <button id="presentMode">Presentación</button>
-        </div>
-      </header>
-
-      <section class="content">
-        <!-- HERO / SNAPSHOT -->
-        <section class="hero">
-          <div class="hero-left">
-            <div class="big-score">
-              <div class="score-number" id="scoreValue">—</div>
-              <div class="score-text">SCORE DE VIABILIDAD</div>
-              <div class="score-tag" id="scoreTag">PRELIMINAR — PENDIENTE</div>
-            </div>
-            <div class="quick-metrics">
-              <div class="metric-card">
-                <div class="m-label">Inversión Inicial</div>
-                <div class="m-value" id="invInit">—</div>
-              </div>
-              <div class="metric-card">
-                <div class="m-label">Ventas 12m</div>
-                <div class="m-value" id="sales12">—</div>
-              </div>
-              <div class="metric-card">
-                <div class="m-label">Utilidad 12m</div>
-                <div class="m-value" id="profit12">—</div>
-              </div>
-              <div class="metric-card">
-                <div class="m-label">ROI</div>
-                <div class="m-value" id="roiVal">—</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="hero-right">
-            <div class="card-visual">
-              <canvas id="donutMarket"></canvas>
-              <div class="card-caption">Mercado LATAM vs Local</div>
-            </div>
-            <div class="mini-cards">
-              <div class="mini">
-                <div class="mini-title">Transportistas Indep.</div>
-                <div class="mini-value">60-70%</div>
-              </div>
-              <div class="mini">
-                <div class="mini-title">Viajes vacíos</div>
-                <div class="mini-value">30-40%</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- PROBLEM SOLUTION -->
-        <section class="ps-block">
-          <div class="ps-col">
-            <h4>PROBLEMA</h4>
-            <ul id="problemList"><li>Alta proporción de viajes vacíos.</li><li>Baja utilización de flota.</li><li>Fragmentación transportistas.</li></ul>
-          </div>
-          <div class="ps-col">
-            <h4>SOLUCIÓN</h4>
-            <ul id="solutionList"><li>Matching carga-viaje.</li><li>Marketplace B2B.</li><li>Pricing dinámico.</li></ul>
-          </div>
-          <div class="ps-col">
-            <h4>RESULTADO</h4>
-            <ul id="resultList"><li>Reducir viajes vacíos 20-30%.</li><li>Aumentar utilización.</li><li>Acceso al mercado para transportistas.</li></ul>
-          </div>
-        </section>
-
-        <!-- GRID: charts, projects, evidence -->
-        <section class="grid">
-          <div class="panel">
-            <h3>Proyectos</h3>
-            <div id="projectsList"></div>
-          </div>
-
-          <div class="panel">
-            <h3>Ingresos (12 meses)</h3>
-            <canvas id="lineRevenue"></canvas>
-          </div>
-
-          <div class="panel">
-            <h3>Evidence Gap</h3>
-            <ul id="evidenceList"></ul>
-          </div>
-
-          <div class="panel">
-            <h3>Top Proveedores</h3>
-            <div id="providersCards" class="providers-cards"></div>
-          </div>
-
-        </section>
-
-      </section>
-      <footer class="footer">NATALIA — Project Engine</footer>
-    </main>
+  <!-- Modal: New Project -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Nuevo proyecto</h2>
+      <label>Id (corto): <input id="p_id" /></label>
+      <label>Nombre: <input id="p_name" /></label>
+      <label>Estado: <select id="p_status"><option>PRE-PILOTO</option><option>VALIDACIÓN</option><option>GO PILOTO</option></select></label>
+      <label>Mercado: <input id="p_market" /></label>
+      <label>Ciudad: <input id="p_city" /></label>
+      <label>Descripción corta: <input id="p_desc" /></label>
+      <div class="modal-actions">
+        <button id="createProject" class="btn primary">Crear</button>
+        <button id="cancel" class="btn">Cancelar</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

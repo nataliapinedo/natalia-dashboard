@@ -1,154 +1,105 @@
-// Natalia Project Engine - graphical enhancements + charts
-const EMBEDDED_PROJECTS = {
-  generated_at: "2026-08-14T00:00:00Z",
-  owner: "Natalia",
-  projects: [
-    {
-      id: "BRAVO-001",
-      name: "BRAVO",
-      status: "PRE-PILOTO",
-      score: 6.8,
-      investment: "Bs 27,070",
-      sales12: "Bs 120,000",
-      profit12: "Bs 35,000",
-      sector: "Apparel / Sportswear",
-      tags: ["skort","polo","short","athleisure"],
-      created_at: "2026-08-14"
-    },
-    {
-      id: "CARBON-5000",
-      name: "Credito Carbono - 5000 ha",
-      status: "IDEA",
-      score: null,
-      investment: null,
-      sales12: null,
-      profit12: null,
-      sector: "Agro / Carbon credits",
-      tags: ["carbon","land","forestry"],
-      created_at: "2026-08-14"
-    }
-  ]
-};
+// app.js - simple dashboard interactivity + in-memory project store (Export JSON)
+const DATA_PATH = './data/projects.json';
+let PROJECTS = [];
 
-let sampleProjects = [];
-
-async function loadProjectsFromMatrix(){
-  sampleProjects = (EMBEDDED_PROJECTS && EMBEDDED_PROJECTS.projects) ? EMBEDDED_PROJECTS.projects.slice() : [];
-  return Promise.resolve();
+async function loadProjects(){
+  try{
+    const res = await fetch(DATA_PATH);
+    if(!res.ok) throw new Error('fetch failed');
+    const json = await res.json();
+    PROJECTS = json.projects || [];
+  }catch(e){
+    // fallback: embedded sample if fetch blocked (file:// issues)
+    PROJECTS = [
+      { id:'BRAVO-001', name:'BRAVO', status:'PRE-PILOTO', market:'Bolivia', city:'Cochabamba', short_description:'Prueba piloto de prendas deportivas', kpis:{}, evidence_gap:[], top_providers:[]} 
+    ];
+  }
+  renderProjects();
 }
 
 function renderProjects(){
-  const el = document.getElementById('projectsList'); el.innerHTML='';
-  sampleProjects.forEach(p=>{
-    const d = document.createElement('div'); d.className='project';
-    const id = p.id || ('P-'+Math.floor(Math.random()*9000+1000));
-    d.innerHTML = `<div><strong>${p.name}</strong><div style='font-size:12px;color:var(--muted)'>${id} 	 ${p.sector||'N/A'}</div></div><div><button class='btn' onclick="loadProject('${id}')">Abrir</button></div>`;
-    el.appendChild(d);
-  });
+  const list = document.getElementById('projectsList');
+  list.innerHTML = '';
+  if(PROJECTS.length===0){ list.innerHTML = '<p class="small">No hay proyectos. Usa "Nuevo proyecto" para crear uno.</p>'; return }
+  PROJECTS.forEach(p=>{
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML = `<h4>${escapeHtml(p.name)} <span class="small">(${escapeHtml(p.id)})</span></h4>
+      <div class="meta">Estado: ${escapeHtml(p.status)} · Mercado: ${escapeHtml(p.market||'—')} · Ciudad: ${escapeHtml(p.city||'—')}</div>
+      <p class="small">${escapeHtml(p.short_description||'—')}</p>
+      <div style="margin-top:10px;text-align:right"><button class="btn" onclick="openProject('${p.id}')">Abrir</button></div>`;
+    list.appendChild(card);
+  })
 }
 
-function findProjectById(id){
-  return sampleProjects.find(x=>x.id===id || x.id===id);
+function openProject(id){
+  const p = PROJECTS.find(x=>x.id===id);
+  if(!p){ alert('Proyecto no encontrado'); return }
+  alert(`Abrir proyecto:\n${p.name} (${p.id})\nEstado: ${p.status}\nMercado: ${p.market} - ${p.city}`)
 }
 
-function loadProject(id){
-  const p = findProjectById(id) || sampleProjects[0];
-  if(!p) return;
-  document.getElementById('scoreValue').innerText = (p.score!==null && p.score!==undefined) ? (Number(p.score).toFixed(1)+ ' / 10') : '\u2014';
-  document.getElementById('scoreLabel').innerText = p.status || 'PRELIMINAR';
-  document.getElementById('invInit').innerText = p.investment || 'PENDIENTE';
-  document.getElementById('sales12').innerText = p.sales12 || 'PENDIENTE';
-  document.getElementById('profit12').innerText = p.profit12 || 'PENDIENTE';
-  document.getElementById('decisionTag').innerText = p.status==='PRE-PILOTO'? 'PRELIMINAR - PENDIENTE' : (p.status||'PRELIMINAR');
-}
+// Utilities
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c]) }
 
-function populateMarketCards(){
-  document.getElementById('tamLatam').innerText = '$187B';
-  document.getElementById('tamBolivia').innerText = '$2.3B';
-  // create donut chart
-  const donutCtx = document.getElementById('donutMarket')?.getContext('2d');
-  if(donutCtx){
-    new Chart(donutCtx, {
-      type: 'doughnut',
-      data: { labels: ['LATAM','Bolivia','Resto'], datasets: [{ data: [187, 2.3, 20], backgroundColor: ['#06b6d4','#7c3aed','#60a5fa'] }] },
-      options: { plugins:{legend:{position:'bottom'}},responsive:true }
-    });
-  }
-}
+// Modal actions
+const modal = document.getElementById('modal');
+const newBtn = document.getElementById('newProjectBtn');
+const cancelBtn = document.getElementById('cancel');
+const createBtn = document.getElementById('createProject');
 
-function runSim(){
-  const price = Number(document.getElementById('price').value)||0;
-  const cost = Number(document.getElementById('cost').value)||0;
-  const units = Number(document.getElementById('units').value)||0;
-  const months = 12;
-  const revenues = [];
-  let u = units;
-  for(let m=0;m<months;m++){
-    revenues.push({month: m+1, revenue: u*price, units: u});
-    u = Math.round(u * (1 + 0.08));
-  }
-  const totalRevenue = revenues.reduce((s,r)=>s+r.revenue,0);
-  const totalCost = revenues.reduce((s,r)=>s+(r.units*cost),0);
-  const profit = totalRevenue - totalCost;
-  document.getElementById('simOutput').innerHTML = `<div><strong>Ingresos 12m:</strong> ${totalRevenue.toLocaleString()} <br/><strong>COGS 12m:</strong> ${totalCost.toLocaleString()} <br/><strong>Utilidad 12m:</strong> ${profit.toLocaleString()}</div>`;
-  renderLine(revenues);
-}
+newBtn.addEventListener('click', ()=>{ modal.classList.remove('hidden'); });
+cancelBtn.addEventListener('click', ()=>{ modal.classList.add('hidden'); });
 
-let revenueChart = null;
-function renderLine(data){
-  const ctx = document.getElementById('lineRevenue').getContext('2d');
-  const labels = data.map(d=>'M'+d.month);
-  const vals = data.map(d=>d.revenue);
-  if(revenueChart) revenueChart.destroy();
-  revenueChart = new Chart(ctx,{
-    type:'line',
-    data:{labels, datasets:[{label:'Ingresos',data:vals,backgroundColor:'rgba(6,182,212,0.15)',borderColor:'var(--accent)',tension:0.35,fill:true}]},
-    options:{responsive:true,plugins:{legend:{display:false}}}
-  });
-}
-
-function addEvidence(){
-  const ul = document.getElementById('evidenceList'); ul.innerHTML='';
-  const items = ['3 cotizaciones proveedores \u2014 NO_VERIFICADO','10 observaciones de precio locales \u2014 NO_VERIFICADO','3 clubes objetivo \u2014 PENDIENTE'];
-  items.forEach(i=>{ const li = document.createElement('li'); li.innerText = i; ul.appendChild(li); });
-}
-
-function renderProviders(){
-  const container = document.getElementById('providersCards'); container.innerHTML='';
-  const rows = [
-    {name:'Taller Deportivo LA',country:'Bolivia',fit:'ALTO'},
-    {name:'Maquila Sport S.A.',country:'Peru',fit:'MEDIO'}
-  ];
-  rows.forEach(r=>{
-    const card = document.createElement('div'); card.className='provider-card';
-    card.innerHTML = `<div class='provider-logo'>LOGO</div><div><strong>${r.name}</strong><div style='font-size:12px;color:var(--muted)'>${r.country} 	 	 Fit: ${r.fit}</div></div>`;
-    container.appendChild(card);
-  });
-}
-
-function exportJSON(){
-  const payload = {projects:sampleProjects, generated_at: new Date().toISOString()};
-  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='projects_export.json'; document.body.appendChild(a); a.click(); a.remove();
-}
-
-function newProject(){
-  const name = prompt('Nombre proyecto (ej: PROYECTO_03_NOMBRE)');
-  if(!name) return;
-  const id = 'PROJ-'+Math.floor(Math.random()*9000+1000);
-  const newP = {id,name,score:5.0,status:'PRELIMINAR',investment:'PENDIENTE',sales12:'PENDIENTE',profit12:'PENDIENTE',sector:'Sin definir',tags:[],created_at:new Date().toISOString()};
-  sampleProjects.push(newP);
+createBtn.addEventListener('click', ()=>{
+  const id = document.getElementById('p_id').value.trim();
+  const name = document.getElementById('p_name').value.trim();
+  if(!id || !name){ alert('Id y Nombre son obligatorios'); return }
+  const status = document.getElementById('p_status').value;
+  const market = document.getElementById('p_market').value.trim();
+  const city = document.getElementById('p_city').value.trim();
+  const desc = document.getElementById('p_desc').value.trim();
+  const obj = { id, name, status, market, city, short_description: desc, kpis:{}, evidence_gap:[], top_providers:[] };
+  PROJECTS.unshift(obj);
   renderProjects();
-}
-
-window.addEventListener('DOMContentLoaded',async()=>{
-  await loadProjectsFromMatrix();
-  renderProjects();
-  populateMarketCards();
-  addEvidence();
-  renderProviders();
-  document.getElementById('runBtn').addEventListener('click',runSim);
-  document.getElementById('exportBtn').addEventListener('click',exportJSON);
-  document.getElementById('newProjectBtn').addEventListener('click',newProject);
+  modal.classList.add('hidden');
+  // clear inputs
+  ['p_id','p_name','p_market','p_city','p_desc'].forEach(i=>document.getElementById(i).value='');
 });
+
+// Export JSON
+const exportBtn = document.getElementById('exportJsonBtn');
+exportBtn.addEventListener('click', ()=>{
+  const payload = { generated_at: new Date().toISOString(), owner: 'Natalia', projects: PROJECTS };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'projects.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+// Search/filter
+const searchInput = document.getElementById('searchInput');
+const filterMarket = document.getElementById('filterMarket');
+
+searchInput.addEventListener('input', ()=>{
+  const q = searchInput.value.toLowerCase();
+  const filtered = PROJECTS.filter(p=>p.name.toLowerCase().includes(q)|| (p.short_description||'').toLowerCase().includes(q)|| (p.id||'').toLowerCase().includes(q));
+  renderFiltered(filtered);
+});
+filterMarket.addEventListener('change', ()=>{
+  const m = filterMarket.value;
+  if(!m) renderProjects(); else renderFiltered(PROJECTS.filter(p=>p.market===m));
+});
+
+function renderFiltered(list){
+  const root = document.getElementById('projectsList'); root.innerHTML='';
+  if(list.length===0){ root.innerHTML = '<p class="small">Sin resultados</p>'; return }
+  list.forEach(p=>{
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML = `<h4>${escapeHtml(p.name)} <span class="small">(${escapeHtml(p.id)})</span></h4>
+      <div class="meta">Estado: ${escapeHtml(p.status)} · Mercado: ${escapeHtml(p.market||'—')} · Ciudad: ${escapeHtml(p.city||'—')}</div>
+      <p class="small">${escapeHtml(p.short_description||'—')}</p>
+      <div style="margin-top:10px;text-align:right"><button class="btn" onclick="openProject('${p.id}')">Abrir</button></div>`;
+    root.appendChild(card);
+  })
+}
+
+// Init
+loadProjects();
